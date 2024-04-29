@@ -1,0 +1,188 @@
+version: '3.5'
+services:
+
+  pyspark_otel_ingestion:
+    build: .
+    ports:
+     - "5000:5000"
+    environment:
+      SPARK_NO_DAEMONIZE: true
+      __SPARK_NO_DAEMONIZE: true
+      MINIO_USER: minioAdmin
+      MINIO_PASSWORD: minio1234
+      MINIO_REGION: us-east-1
+
+      AWS_ACCESS_KEY_ID: minioAdmin
+      AWS_SECRET_ACCESS_KEY: minio1234
+      AWS_REGION: us-east-1
+      # CATALOG_S3_PATH__STYLE__ACCESS: true
+    volumes:
+     - iceberg_data:/iceberg_data
+    depends_on:
+      - minio
+      - createbuckets
+      - postgres
+      - kafka
+      - hive-metastore
+    networks:
+      - kafka-cluster
+
+  postgres:
+    image: postgres:14.1-alpine
+    ports:
+      - '5454:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - kafka-cluster
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.5.0
+    container_name: zookeeper
+    networks: 
+      - kafka-cluster
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:5.5.0
+    container_name: kafka
+    ports: 
+      - "9092:9092"
+      - "19092:19092"
+    networks: 
+      - kafka-cluster
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: kafdrop
+    ports:
+      - 9004:9000
+    environment:
+      - KAFKA_BROKERCONNECT=kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - kafka-cluster
+
+  hive-metastore:
+    image: naushadh/hive-metastore
+
+    ports:
+      - '9083:9083'
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_DB: postgres
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      MINIO_ROOT_USER: minioAdmin
+      MINIO_ROOT_PASSWORD: minio1234
+      AWS_ACCESS_KEY_ID: minioAdmin
+      AWS_SECRET_ACCESS_KEY: minio1234
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_BUCKET: datamesh
+      S3_PREFIX: observability
+      AWS_REGION: us-east-1
+    depends_on:
+      - postgres
+      - minio
+      - createbuckets
+    networks: 
+      - kafka-cluster
+  # hive-metastore:
+  #   # image: naushadh/hive-metastore
+  #   image: apache/hive:4.0.0-alpha-2
+
+  #   ports:
+  #     - '9083:9083'
+  #   environment:
+  #     DATABASE_HOST: postgres
+  #     DATABASE_PORT: 5432
+  #     DATABASE_DB: postgres
+  #     DATABASE_USER: postgres
+  #     DATABASE_PASSWORD: postgres
+  #     MINIO_ROOT_USER: minioAdmin'
+  #     DB_DRIVER: postgres
+  #     MINIO_ROOT_PASSWORD: minio1234
+  #     AWS_ACCESS_KEY_ID: minioAdmin
+  #     AWS_SECRET_ACCESS_KEY: minio1234
+  #     S3_ENDPOINT_URL: http://minio:9000
+  #     S3_BUCKET: observability
+  #     S3_PREFIX: trace
+  #     AWS_REGION: us-east-1
+  #     SERVICE_NAME: 'metastore'
+  #     SERVICE_OPTS: '-Xmx1G -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+  #                    -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres:5432/postgres
+  #                    -Djavax.jdo.option.ConnectionUserName=postgres
+  #                    -Djavax.jdo.option.ConnectionPassword=postgres'
+  #   depends_on:
+  #     - postgres
+  #     - minio
+  #     - createbuckets
+  #   networks:
+  #     - kafka-cluster
+  minio:
+    image: 'quay.io/minio/minio:latest'
+    container_name: minio
+    privileged: true
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - ./minio-data:/data
+    environment:
+      MINIO_ROOT_USER: minioAdmin
+      MINIO_ROOT_PASSWORD: minio1234
+    command: server /data --console-address ":9001"
+    networks:
+      - kafka-cluster
+
+  createbuckets:
+    image: minio/mc
+    networks:
+      - kafka-cluster
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc config host add minio http://minio:9000 minioAdmin minio1234) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc rm -r --force minio/datamesh;
+      /usr/bin/mc mb minio/datamesh;
+      /usr/bin/mc policy set public minio/datamesh;
+      tail -f /dev/null
+      "
+    # entrypoint: >
+    #   /bin/sh -c "
+    #   /usr/bin/mc alias set myminio http://minio:9000 minioAdmin minio1234;
+    #   /usr/bin/mc mb --ignore-existing myminio/warehouse;
+    #   /usr/bin/mc anonymous set public myminio/warehouse;
+    #   # /usr/bin/mc mb --ignore-existing myminio/observability;
+    #   # /usr/bin/mc anonymous set public myminio/observability;
+    #   # /usr/bin/mc mb --ignore-existing myminio/iceberg-data;
+    #   # /usr/bin/mc anonymous set public myminio/iceberg-data;
+            
+    #   exit 0;
+    #   "
+volumes:
+  minio-data:
+  hive-data:
+  iceberg_data:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
+
+networks:
+  kafka-cluster:
+    name: kafka-cluster
+    driver: bridge

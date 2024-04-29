@@ -1,0 +1,70 @@
+spark:
+  app_name: "Apache Iceberg with PySpark"
+  master: "local[*]"
+  jars:
+    - "/path/to/your/jar1.jar"
+    - "/path/to/your/jar2.jar"
+  spark_properties:
+    spark.executor.memory: "2g"
+    spark.driver.memory: "1g"
+    spark.sql.shuffle.partitions: "40"
+    "spark.driver.host": "localhost"
+  iceberg_properties:
+    spark.sql.catalog.apm: "org.apache.iceberg.spark.SparkCatalog"
+    spark.sql.defaultCatalog: "apm"
+    spark.sql.catalog.apm.default-namespace: "apm"
+    spark.sql.catalog.apm.cache-enabled: "false"
+    spark.hadoop.hive.metastore.schema.verification: "false"
+    spark.hadoop.hive.metastore.schema.verification.record.version: "false"
+    spark.hadoop.datanucleus.schema.autoCreateTables: "true"
+    # spark.sql.catalog.apm: "org.apache.iceberg.spark.SparkSessionCatalog"
+    spark.sql.catalog.apm.type: "hive"
+    spark.sql.catalog.apm.uri: "thrift://hive-metastore:9083"
+    hive.metastore.uris: "thrift://hive-metastore:9083"
+    spark.sql.catalog.apm.warehouse: "s3a://datamesh/observability/"
+    spark.sql.catalog.apm.io-impl: "org.apache.iceberg.aws.s3.S3FileIO"
+    spark.sql.catalog.apm.s3.endpoint: "http://minio:9000"
+    spark.sql.extensions: "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
+    spark.eventLog.enabled: "false"
+    iceberg.engine.hive.enabled: "true"
+    spark.eventLog.dir: "/opt/spark/spark-events"
+    spark.history.fs.logDirectory: "/opt/spark/spark-events"
+    spark.sql.storeAssignmentPolicy: "ANSI"
+    spark.sql.catalog.apm.s3.path-style-access: "true"
+
+
+    # spark.sql.catalogImplementation: "in-memory"
+
+Kafka:
+  bootstrap_servers: "kafka:9092"
+  topic: "observai_main_traces_1"
+  security_protocol: "PLAINTEXT"
+  auto_offset_reset: "earliest"
+  session_timeout_ms: 6000
+  request_timeout_ms: 15000
+  ssl_cafile: "./secrets/certificate/kafka/observai.crt"
+  ssl_certfile: "./secrets/certificate/kafka/observai.pem"
+  group_id: "kafka-trace"
+
+
+# Kafka:
+#   bootstrap_servers: "observai-kafka-external-bootstrap-observability-kafka.apps.zagaobservability.zagaopensource.com:443"
+#   topic: "observai_main_traces_1"
+#   ssl_cafile: ".app//secrets/certificate/kafka/observai.crt"
+#   ssl_certfile: ".app/secrets/certificate/kafka/observai.pem"
+#   group_id: "kafka-trace"
+
+# dev_Kafka:
+#   bootstrap_servers: "kafka:9092"
+#   topic: "observai_main_traces_1"
+#   group_id: "kafka-trace"
+ 
+#MinIO:
+  #endpoint: "http://minio:9000"
+  #bucket: "warehouse"
+  #parquet_path: "s3://warehouse/trace_perist_data" 
+
+
+
+
+ 
