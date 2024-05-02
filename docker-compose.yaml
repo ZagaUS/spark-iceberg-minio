@@ -4,7 +4,9 @@ services:
   pyspark_otel_ingestion:
     build: .
     ports:
-     - "5000:5000"
+    #  - "5000:5000"
+      - 4040:4040
+      - 4041:4041
     environment:
       SPARK_NO_DAEMONIZE: true
       __SPARK_NO_DAEMONIZE: true

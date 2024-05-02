@@ -1,5 +1,23 @@
 FROM python:3.9-bullseye
 
+#############################################
+# install pipenv
+############################################
+ENV PIPENV_VENV_IN_PROJECT=1
+
+# ENV PIPENV_VENV_IN_PROJECT=1 is important: it causes the resuling virtual environment to be created as /app/.venv. Without this the environment gets created somewhere surprising, such as /root/.local/share/virtualenvs/app-4PlAip0Q - which makes it much harder to write automation scripts later on.
+
+RUN python -m pip install --upgrade pip
+
+RUN pip install --no-cache-dir pipenv
+
+RUN pip install --no-cache-dir jupyter
+
+RUN pip install --no-cache-dir py4j
+
+RUN pip install --no-cache-dir findspark
+
+#spark
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       sudo \
@@ -31,6 +49,11 @@ ENV SPARK_VERSION=3.5.1
 ENV SPARK_MAJOR_VERSION=3.5
 ENV ICEBERG_VERSION=1.5.1
 
+# jupitor note
+ENV PYSPARK_PYTHON=/usr/bin/python3
+ENV PYSPARK_DRIVER_PYTHON='jupyter'
+ENV PYSPARK_DRIVER_PYTHON_OPTS='notebook --no-browser --port=4041'
+
 # Download spark
 RUN mkdir -p ${SPARK_HOME} \
  && curl https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz -o spark-${SPARK_VERSION}-bin-hadoop3.tgz \
@@ -51,7 +74,8 @@ ENV IJAVA_CLASSPATH=/opt/spark/jars/*
 
 RUN mkdir -p /home/iceberg/localwarehouse  /home/iceberg/warehouse /home/iceberg/spark-events /home/iceberg /opt/spark/spark-events
 
-
+RUN mkdir -p /notebook
+RUN chmod +x /notebook
 # COPY spark-defaults.conf /opt/spark/conf
 ENV PATH="/opt/spark/sbin:/opt/spark/bin:${PATH}"
 
@@ -69,6 +93,9 @@ COPY ./entrypoint.sh .
 # Copy the current directory contents into the container at /app
 RUN chmod +x /app/entrypoint.sh
 
-EXPOSE 4040
+#EXPOSE 4040
+EXPOSE 4040 4041
 
-ENTRYPOINT ["./entrypoint.sh"]
+
+ENTRYPOINT ["./entrypoint.sh"  ]
+# CMD [ "jupyter notebook --ip=0.0.0.0 --port=4041 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"]
