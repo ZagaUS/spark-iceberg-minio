@@ -23,9 +23,7 @@ The followoing components involved for this demo and deployed as docker compose
    docker compose build
    docker compose up
     ```
-run kafka producer to pus data to kafka topic 
 
-    ```bash
-    ./pyhthon3 /spark-iceberk-minio/app/kafka_consumer/kafka_producer.py
+login to jupyter notebook , and run iceberg - minio integration demo located in notebook folder
 
-    ```
+localhost:4041
