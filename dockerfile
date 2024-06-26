@@ -76,7 +76,7 @@ RUN mkdir -p /home/iceberg/localwarehouse  /home/iceberg/warehouse /home/iceberg
 
 RUN mkdir -p /notebook
 RUN chmod +x /notebook
-# COPY spark-defaults.conf /opt/spark/conf
+COPY spark-defaults.conf /opt/spark/conf
 ENV PATH="/opt/spark/sbin:/opt/spark/bin:${PATH}"
 
 RUN chmod u+x /opt/spark/sbin/* && \
