@@ -3,3 +3,16 @@ Pyspark==3.5.1
 pyyaml==6.0
 python-dotenv==0.20.0
 confluent-kafka
+sqlalchemy-trino
+py4j
+pyarrow
+pyspark[pandas_on_spark]
+pyiceberg[s3fs,hive]
+pandas
+grpcio
+grpcio-status
+googleapis-common-protos
+python-dotenv==0.20.0
+confluent-kafka
+numpy
+xgboost

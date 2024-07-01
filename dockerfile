@@ -13,9 +13,13 @@ RUN pip install --no-cache-dir pipenv
 
 RUN pip install --no-cache-dir jupyter
 
+RUN pip install --no-cache-dir jupyterlab
+
 RUN pip install --no-cache-dir py4j
 
 RUN pip install --no-cache-dir findspark
+
+RUN pip install --upgrade jupyterlab jupyterlab-git
 
 #spark
 RUN apt-get update && \
@@ -60,11 +64,17 @@ RUN mkdir -p ${SPARK_HOME} \
  && tar xvzf spark-${SPARK_VERSION}-bin-hadoop3.tgz --directory /opt/spark --strip-components 1 \
  && rm -rf spark-${SPARK_VERSION}-bin-hadoop3.tgz
 
+
 # Download iceberg spark runtime
 RUN curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_2.12/${ICEBERG_VERSION}/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_2.12-${ICEBERG_VERSION}.jar -Lo /opt/spark/jars/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_2.12-${ICEBERG_VERSION}.jar
 
 # Download AWS bundle
 RUN curl -s https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-aws-bundle/${ICEBERG_VERSION}/iceberg-aws-bundle-${ICEBERG_VERSION}.jar -Lo /opt/spark/jars/iceberg-aws-bundle-${ICEBERG_VERSION}.jar
+
+RUN curl -s https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar -Lo /opt/spark/jars/hadoop-aws-3.3.4.jar
+RUN curl -s https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.12.262/aws-java-sdk-1.12.262.jar -Lo /opt/spark/jars/aws-java-sdk-1.12.262.jar
+# RUN curl -s https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-core/1.12.262/aws-java-sdk-core-1.12.262.jar  -Lo /opt/spark/jars/aws-java-sdk-core-1.12.262.jar
+RUN curl -s https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar -Lo /opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
 
 # Download PostgreSQL JDBC driver
 RUN curl -s https://jdbc.postgresql.org/download/postgresql-42.2.23.jar -o /opt/spark/jars/postgresql-jdbc.jar
@@ -82,6 +92,8 @@ ENV PATH="/opt/spark/sbin:/opt/spark/bin:${PATH}"
 RUN chmod u+x /opt/spark/sbin/* && \
     chmod u+x /opt/spark/bin/*
 
+RUN mkdir -p /workspace
+RUN chmod +x /workspace
 
 # Set the working directory to /app
 WORKDIR /app

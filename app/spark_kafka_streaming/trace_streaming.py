@@ -23,7 +23,12 @@ SCHEMA = StructType([
 ])
 
 
-spark = SparkSession.builder.appName("read_trace_topic").getOrCreate()
+# spark_config = config['spark']
+conf = SparkConf() \
+    .setAppName("spark demo") \
+    .setMaster("local[*]")
+
+spark = SparkSession.builder.config(conf=conf).enableHiveSupport().getOrCreate()
 
 # Reduce logging verbosity
 spark.sparkContext.setLogLevel("WARN")
